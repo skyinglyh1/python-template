@@ -77,7 +77,7 @@ def Main(operation, args):
         owner = args[0]
         spender = args[1]
         return allowance(owner,spender)
-
+    return False
 
 def init():
     """
@@ -150,7 +150,7 @@ def transfer(from_acct,to_acct,amount):
     """
     if len(to_acct) != 20 or len(from_acct) != 20:
         raise Exception("address length error")
-    if CheckWitness(from_acct) == False:
+    if CheckWitness(from_acct) == False or amount < 0:
         return False
 
     fromKey = concat(BALANCE_PREFIX,from_acct)
@@ -201,7 +201,7 @@ def approve(owner,spender,amount):
         raise Exception("address length error")
     if CheckWitness(owner) == False:
         return False
-    if amount > balanceOf(owner):
+    if amount > balanceOf(owner) or amount < 0:
         return False
 
     key = concat(concat(APPROVE_PREFIX,owner),spender)
@@ -231,13 +231,13 @@ def transferFrom(spender,from_acct,to_acct,amount):
 
     fromKey = concat(BALANCE_PREFIX, from_acct)
     fromBalance = Get(ctx, fromKey)
-    if amount > fromBalance:
+    if amount > fromBalance or amount < 0:
         return False
 
     approveKey = concat(concat(APPROVE_PREFIX,from_acct),spender)
     approvedAmount = Get(ctx,approveKey)
     toKey = concat(BALANCE_PREFIX,to_acct)
-    toBalance = Get(ctx, toKey)
+
     if amount > approvedAmount:
         return False
     elif amount == approvedAmount:
@@ -247,6 +247,7 @@ def transferFrom(spender,from_acct,to_acct,amount):
         Put(ctx,approveKey,approvedAmount - amount)
         Put(ctx, fromKey, fromBalance - amount)
 
+    toBalance = Get(ctx, toKey)
     Put(ctx, toKey, toBalance + amount)
 
     # Notify(["transfer", AddressToBase58(from_acct), AddressToBase58(to_acct), amount])
